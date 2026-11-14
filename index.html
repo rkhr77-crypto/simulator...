@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>실생활 일차함수 시뮬레이터 | 나와 친구의 저금통 배틀</title>
+  <style>
+    /* ========== 전역 테마 및 태블릿 최적화 스타일 ========== */
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #EEF2FF;
+      --primary-hover: #4338CA;
+      --my-color: #EC4899;        /* 나의 저금통: 핑크 */
+      --my-light: #FDF2F8;
+      --friend-color: #0284C7;    /* 친구 저금통: 스카이블루 */
+      --friend-light: #F0F9FF;
+      --accent: #F59E0B;
+      --accent-light: #FEF3C7;
+      --success: #10B981;
+      --success-light: #D1FAE5;
+      --danger: #EF4444;
+      --dark: #1E293B;
+      --gray: #64748B;
+      --light-gray: #F8FAFC;
+      --border: #E2E8F0;
+      --card-bg: #FFFFFF;
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.05);
+      --shadow-md: 0 6px 18px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 28px rgba(0,0,0,0.11);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --transition: all 0.22s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+      background: linear-gradient(135deg, #F0F4FF 0%, #FFF7ED 50%, #FAF5FF 100%);
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      line-height: 1.45;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 940px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ========== 1. 콤팩트 헤더 & 스텝 내비게이션 ========== */
+    .app-header {
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1.5px solid #E0E7FF;
+      flex-shrink: 0;
+    }
+
+    .header-title-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .header-badge {
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 14px;
+    }
+
+    .app-title {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      background: var(--light-gray);
+      border: 1px solid #CBD5E1;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: var(--transition);
+      color: var(--dark);
+    }
+
+    .btn-icon:hover {
+      background: #E2E8F0;
+      transform: scale(1.05);
+    }
+
+    /* 스텝 탭 인디케이터 (표지 + 1, 2, 3, 4단계) */
+    .step-indicator {
+      display: grid;
+      grid-template-columns: 80px repeat(4, 1fr);
+      gap: 6px;
+      background: white;
+      padding: 6px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+
+    .step-tab {
+      background: #F1F5F9;
+      border: 1.5px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 8px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--gray);
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .step-tab .step-num {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #CBD5E1;
+      color: white;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .step-tab.active {
+      background: #EEF2FF;
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.15);
+    }
+
+    .step-tab.active .step-num {
+      background: var(--primary);
+    }
+
+    .step-tab.completed {
+      background: #ECFDF5;
+      color: var(--success);
+      border-color: #A7F3D0;
+    }
+
+    .step-tab.completed .step-num {
+      background: var(--success);
+    }
+
+    @media (max-width: 680px) {
+      .step-tab span.tab-text {
+        display: none;
+      }
+      .step-indicator {
+        grid-template-columns: 50px repeat(4, 1fr);
+      }
+    }
+
+    /* ========== 2. 메인 카드 & 단계별 한 화면 뷰 (One Screen View) ========== */
+    .step-view {
+      display: none;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border);
+      animation: fadeIn 0.25s ease-out;
+      position: relative;
+    }
+
+    .step-view.current {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.99) translateY(6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .view-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid #F1F5F9;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .view-title-bar h2 {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .view-subtitle {
+      font-size: 13px;
+      color: var(--gray);
+      font-weight: 600;
+    }
+
+    /* 하단 이전/다음 단계 내비게이션 바 */
+    .step-action-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 14px;
+      border-top: 1.5px dashed var(--border);
+      margin-top: 4px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-nav {
+      height: 48px;
+      padding: 0 24px;
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      border: none;
+    }
+
+    .btn-nav-prev {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #CBD5E1;
+    }
+
+    .btn-nav-prev:hover {
+      background: #E2E8F0;
+    }
+
+    .btn-nav-next {
+      background: linear-gradient(135deg, #4F46E5, #6366F1);
+      color: white;
+      box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-nav-next:hover {
+      background: linear-gradient(135deg, #4338CA, #4F46E5);
+      transform: translateY(-1.5px);
+    }
+
+    .btn-nav-next:disabled {
+      background: #CBD5E1;
+      color: #94A3B8;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ========================================================
+       [표지 / 인트로 화면 전용 스타일]
+    ======================================================== */
+    .cover-view-container {
+      text-align: center;
+      padding: 24px 16px 28px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .cover-badge-pill {
+      background: #EEF2FF;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 1px solid #C7D2FE;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cover-main-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #1E293B;
+      letter-spacing: -0.8px;
+      line-height: 1.3;
+    }
+
+    .cover-main-title span.highlight-q {
+      background: linear-gradient(135deg, #4F46E5, #EC4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover-sub-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    .cover-illustration-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin: 10px 0;
+    }
+
+    .cover-piggy-avatar {
+      width: 110px;
+      height: 95px;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.12));
+      animation: floatPiggy 3s ease-in-out infinite;
+    }
+
+    @keyframes floatPiggy {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* 표지 3가지 재미 포인트 카드 */
+    .cover-features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 720px;
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .cover-features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cover-feature-item {
+      background: #F8FAFC;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 12px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .cover-feature-item strong {
+      display: block;
+      color: var(--dark);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .cover-feature-item p {
+      color: var(--gray);
+      line-height: 1.4;
+    }
+
+    /* 대형 시작 버튼 */
+    .btn-start-game {
+      height: 56px;
+      padding: 0 44px;
+      background: linear-gradient(135deg, #4F46E5, #EC4899);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      animation: pulseBtn 2s infinite;
+    }
+
+    @keyframes pulseBtn {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
+    .btn-start-game:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.45);
+    }
+
+    /* ========== [스텝 1 화면] 대결 & 투표 ========== */
+    .battle-grid-compact {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    @media (max-width: 680px) {
+      .battle-grid-compact {
+        grid-template-columns: 1fr;
+      }
+      .vs-badge-compact {
+        margin: -4px auto;
+      }
+    }
+
+    .piggy-card-compact {
+      border-radius: var(--radius-md);
+      padding: 16px;
+      border: 2px solid;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .piggy-card-compact.mine {
+      background: linear-gradient(180deg, #FFF5F7 0%, #FFFFFF 100%);
+      border-color: #F472B6;
+    }
+
+    .piggy-card-compact.friend {
+      background: linear-gradient(180deg, #F0F9FF 0%, #FFFFFF 100%);
+      border-color: #38BDF8;
+    }
+
+    .piggy-header-tag {
+      font-size: 13px;
+      font-weight: 800;
+      padding: 3px 12px;
+      border-radius: 16px;
+      margin-bottom: 8px;
+    }
+
+    .piggy-card-compact.mine .piggy-header-tag {
+      background: #FDF2F8;
+      color: var(--my-color);
+      border: 1px solid #FBCFE8;
+    }
+
+    .piggy-card-compact.friend .piggy-header-tag {
+      background: #F0F9FF;
+      color: var(--friend-color);
+      border: 1px solid #BAE6FD;
+    }
+
+    .piggy-avatar-small {
+      width: 95px;
+      height: 75px;
+      margin-bottom: 6px;
+    }
+
+    .piggy-avatar-small svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
+    }
+
+    .clue-list-compact {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .clue-item-compact {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .clue-item-compact .clue-lbl {
+      color: var(--gray);
+      font-weight: 600;
+    }
+
+    .clue-item-compact .clue-num {
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .piggy-card-compact.mine .clue-num { color: var(--my-color); }
+    .piggy-card-compact.friend .clue-num { color: var(--friend-color); }
+
+    .vs-badge-compact {
+      background: linear-gradient(135deg, #F59E0B, #EA580C);
+      color: white;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3);
+      border: 2px solid white;
+      flex-shrink: 0;
+    }
+
+    .vote-panel-compact {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+      border: 1.5px solid #FCD34D;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .vote-title-compact {
+      font-size: 17px;
+      font-weight: 900;
+      color: #92400E;
+      margin-bottom: 12px;
+    }
+
+    .vote-grid-compact {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .vote-grid-compact {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn-vote-compact {
+      padding: 12px 10px;
+      border-radius: var(--radius-sm);
+      border: 2px solid;
+      background: white;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-vote-compact.mine { border-color: #F472B6; color: var(--my-color); }
+    .btn-vote-compact.mine:hover { background: #FDF2F8; }
+
+    .btn-vote-compact.tie { border-color: #CBD5E1; color: #475569; }
+    .btn-vote-compact.tie:hover { background: #F1F5F9; }
+
+    .btn-vote-compact.friend { border-color: #38BDF8; color: var(--friend-color); }
+    .btn-vote-compact.friend:hover { background: #F0F9FF; }
+
+    .btn-vote-compact.selected {
+      background: #4F46E5 !important;
+      color: white !important;
+      border-color: #4F46E5 !important;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+      transform: scale(1.02);
+    }
+
+    /* ========== [스텝 2 화면] 계산 & 검증 ========== */
+    .summary-banner-bar {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-around;
+      font-size: 13px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .summary-banner-bar strong { font-weight: 800; }
+
+    .calc-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 4px 0;
+    }
+
+    @media (max-width: 600px) {
+      .calc-inputs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .calc-box-compact {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      border: 2px solid;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .calc-box-compact.mine { border-color: #FBCFE8; }
+    .calc-box-compact.friend { border-color: #BAE6FD; }
+
+    .calc-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .calc-box-compact.mine .calc-label-row { color: var(--my-color); }
+    .calc-box-compact.friend .calc-label-row { color: var(--friend-color); }
+
+    .input-wrapper-rel {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .calc-input-tablet {
+      width: 100%;
+      height: 46px;
+      padding: 0 34px 0 14px;
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--dark);
+      border: 1.5px solid #CBD5E1;
+      border-radius: 8px;
+      text-align: right;
+      outline: none;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .calc-input-tablet:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .input-unit-tag {
+      position: absolute;
+      right: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--gray);
+      pointer-events: none;
+    }
+
+    .btn-verify-tablet {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #4F46E5, #6366F1);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-verify-tablet:hover {
+      background: linear-gradient(135deg, #4338CA, #4F46E5);
+    }
+
+    .battle-result-card {
+      display: none;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      animation: fadeIn 0.25s ease-out;
+      border: 2px solid;
+    }
+
+    .battle-result-card.win-mine { background: #FDF2F8; border-color: #F472B6; color: #9D174D; }
+    .battle-result-card.win-friend { background: #F0F9FF; border-color: #38BDF8; color: #0369A1; }
+    .battle-result-card.win-tie { background: #F8FAFC; border-color: #94A3B8; color: #334155; }
+
+    .result-head-row {
+      font-size: 17px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-detail-text {
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    /* ========== [스텝 3 화면] 그래프 비교 ========== */
+    .formulas-compact-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .formulas-compact-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .formula-pill-box {
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      border: 1.5px solid;
+      background: white;
+    }
+
+    .formula-pill-box.mine { border-color: #FBCFE8; background: #FFF5F7; }
+    .formula-pill-box.friend { border-color: #BAE6FD; background: #F0F9FF; }
+
+    .formula-eq-large {
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+    .formula-pill-box.mine .formula-eq-large { color: var(--my-color); }
+    .formula-pill-box.friend .formula-eq-large { color: var(--friend-color); }
+
+    .formula-sub-note {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.4;
+    }
+
+    .canvas-wrapper-tablet {
+      width: 100%;
+      height: 270px;
+      background: #FAFAFA;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .graph-note-compact {
+      font-size: 13px;
+      color: #334155;
+      background: #F8FAFC;
+      border-radius: 8px;
+      padding: 10px 14px;
+      border-left: 3px solid var(--primary);
+      line-height: 1.5;
+    }
+
+    /* ========== [스텝 4 화면] 심화 실험실 (구체적 안내 강화) ========== */
+    .maker-instruction-card {
+      background: #F5F3FF;
+      border: 1.5px solid #DDD6FE;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .maker-prompt-head {
+      font-size: 15px;
+      font-weight: 900;
+      color: #5B21B6;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .maker-clue-badge-row {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: #4C1D95;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #E9D5FF;
+      flex-wrap: wrap;
+    }
+
+    .maker-eq-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 900;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .slot-col-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .slot-input-exact {
+      width: 110px;
+      height: 42px;
+      border: 2px dashed #8B5CF6;
+      border-radius: 8px;
+      background: white;
+      font-size: 17px;
+      font-weight: 900;
+      text-align: center;
+      color: #6D28D9;
+      outline: none;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .slot-input-exact:focus {
+      border-style: solid;
+      border-color: #6D28D9;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .slot-label-exact {
+      font-size: 11px;
+      font-weight: 800;
+      color: #6D28D9;
+      background: #EDE9FE;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .btn-check-slot {
+      height: 42px;
+      padding: 0 20px;
+      background: #7C3AED;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-check-slot:hover {
+      background: #6D28D9;
+    }
+
+    .maker-feedback-box {
+      font-size: 13px;
+      font-weight: 800;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: none;
+      margin-top: 6px;
+    }
+
+    /* 슬라이더 컨트롤러 */
+    .sliders-grid-compact {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .sliders-grid-compact {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .slider-card-compact {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      border: 1.5px solid;
+    }
+
+    .slider-card-compact.slope { border-color: #C7D2FE; }
+    .slider-card-compact.intercept { border-color: #FBCFE8; }
+
+    .slider-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .slider-badge-compact {
+      font-size: 14px;
+      font-weight: 900;
+      padding: 1px 8px;
+      border-radius: 6px;
+    }
+    .slider-card-compact.slope .slider-badge-compact { background: #EEF2FF; color: var(--primary); }
+    .slider-card-compact.intercept .slider-badge-compact { background: #FDF2F8; color: var(--my-color); }
+
+    .custom-range-touch {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background: #E2E8F0;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      margin: 8px 0 4px 0;
+    }
+
+    .custom-range-touch::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      border: 2px solid white;
+    }
+
+    .slider-card-compact.intercept .custom-range-touch::-webkit-slider-thumb {
+      background: var(--my-color);
+    }
+
+    .slider-tip-text {
+      font-size: 11px;
+      color: var(--gray);
+    }
+
+    .live-banner-compact {
+      background: #EEF2FF;
+      border: 1.5px solid #C7D2FE;
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #312E81;
+    }
+
+    /* ========== 3. 종료 모달 ========== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-content-compact {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      border: 3px solid #6366F1;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .summary-card-clean {
+      background: #F1F5F9;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: left;
+      margin: 16px 0;
+      font-size: 13px;
+      border: 1px solid #CBD5E1;
+      line-height: 1.6;
+    }
+
+    .summary-card-clean ul {
+      padding-left: 18px;
+      margin-top: 6px;
+    }
+
+    .btn-finish-action {
+      height: 46px;
+      padding: 0 28px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 23px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    /* 폭죽 캔버스 */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 폭죽용 캔버스 (순수 JS) -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-container">
+    
+    <!-- ========== 상단 헤더 ========== -->
+    <header class="app-header">
+      <div class="header-title-box" onclick="switchStep(0)">
+        <span class="header-badge">중2 수학 도입</span>
+        <h1 class="app-title">
+          <span>🐷</span> 실생활 일차함수 시뮬레이터
+        </h1>
+      </div>
+
+      <div class="header-controls">
+        <button id="soundToggleBtn" class="btn-icon" title="효과음 켜기/끄기" onclick="toggleSound()">
+          🔔
+        </button>
+      </div>
+    </header>
+
+    <!-- 스텝 인디케이터 (표지 + 1, 2, 3, 4단계) -->
+    <nav class="step-indicator">
+      <div id="tabStep0" class="step-tab active" onclick="switchStep(0)">
+        <span>🏠</span>
+        <span class="tab-text">표지</span>
+      </div>
+      <div id="tabStep1" class="step-tab" onclick="switchStep(1)">
+        <span class="step-num">1</span>
+        <span class="tab-text">대결 & 투표</span>
+      </div>
+      <div id="tabStep2" class="step-tab" onclick="switchStep(2)">
+        <span class="step-num">2</span>
+        <span class="tab-text">계산 & 확인</span>
+      </div>
+      <div id="tabStep3" class="step-tab" onclick="switchStep(3)">
+        <span class="step-num">3</span>
+        <span class="tab-text">그래프 비교</span>
+      </div>
+      <div id="tabStep4" class="step-tab" onclick="switchStep(4)">
+        <span class="step-num">4</span>
+        <span class="tab-text">심화 실험실</span>
+      </div>
+    </nav>
+
+    <!-- ========================================================
+         [스텝 0 화면] 표지 / 인트로 화면
+    ======================================================== -->
+    <section class="step-view current" id="viewStep0">
+      <div class="cover-view-container">
+        
+        <div class="cover-badge-pill">
+          <span>💡</span> 중학교 2학년 수학 도입 탐구
+        </div>
+
+        <div>
+          <h2 class="cover-main-title">
+            <span class="highlight-q">일차함수는 무엇일까요?</span>
+          </h2>
+          <p class="cover-sub-title">
+            저금통 문제로 정확히 알아보아요! 🐷🪙
+          </p>
+        </div>
+
+        <!-- 일러스트 돼지 캐릭터들 -->
+        <div class="cover-illustration-row">
+          <!-- 내 핑크 돼지 -->
+          <div class="cover-piggy-avatar">
+            <svg viewBox="0 0 160 140">
+              <ellipse cx="80" cy="128" rx="55" ry="10" fill="#FCE7F3"/>
+              <path d="M 42 38 Q 28 15 48 20 Z" fill="#F472B6"/>
+              <path d="M 118 38 Q 132 15 112 20 Z" fill="#F472B6"/>
+              <ellipse cx="80" cy="75" rx="60" ry="50" fill="#F472B6"/>
+              <ellipse cx="80" cy="75" rx="55" ry="46" fill="#F9A8D4"/>
+              <rect x="68" y="27" width="24" height="6" rx="3" fill="#9D174D"/>
+              <rect x="45" y="110" width="16" height="15" rx="6" fill="#EC4899"/>
+              <rect x="99" y="110" width="16" height="15" rx="6" fill="#EC4899"/>
+              <ellipse cx="80" cy="84" rx="20" ry="14" fill="#F472B6"/>
+              <circle cx="73" cy="84" r="3.5" fill="#9D174D"/>
+              <circle cx="87" cy="84" r="3.5" fill="#9D174D"/>
+              <circle cx="56" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="54.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <circle cx="104" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="102.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <ellipse cx="44" cy="76" rx="6" ry="4" fill="#FB7185" opacity="0.6"/>
+              <ellipse cx="116" cy="76" rx="6" ry="4" fill="#FB7185" opacity="0.6"/>
+            </svg>
+          </div>
+          <span style="font-size: 28px; font-weight: 900; color: #EA580C;">VS</span>
+          <!-- 친구 파랑 돼지 -->
+          <div class="cover-piggy-avatar" style="animation-delay: -1.5s;">
+            <svg viewBox="0 0 160 140">
+              <ellipse cx="80" cy="128" rx="55" ry="10" fill="#E0F2FE"/>
+              <path d="M 42 38 Q 28 15 48 20 Z" fill="#38BDF8"/>
+              <path d="M 118 38 Q 132 15 112 20 Z" fill="#38BDF8"/>
+              <ellipse cx="80" cy="75" rx="60" ry="50" fill="#38BDF8"/>
+              <ellipse cx="80" cy="75" rx="55" ry="46" fill="#7DD3FC"/>
+              <rect x="68" y="27" width="24" height="6" rx="3" fill="#0369A1"/>
+              <rect x="45" y="110" width="16" height="15" rx="6" fill="#0284C7"/>
+              <rect x="99" y="110" width="16" height="15" rx="6" fill="#0284C7"/>
+              <ellipse cx="80" cy="84" rx="20" ry="14" fill="#38BDF8"/>
+              <circle cx="73" cy="84" r="3.5" fill="#0369A1"/>
+              <circle cx="87" cy="84" r="3.5" fill="#0369A1"/>
+              <circle cx="56" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="54.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <circle cx="104" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="102.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <ellipse cx="44" cy="76" rx="6" ry="4" fill="#38BDF8" opacity="0.6"/>
+              <ellipse cx="116" cy="76" rx="6" ry="4" fill="#38BDF8" opacity="0.6"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 3단계 특징 안내 -->
+        <div class="cover-features-grid">
+          <div class="cover-feature-item">
+            <strong>1. ⚔️ 저금통 대결 & 투표</strong>
+            <p>시작 금액과 하루 저금액이 다른 두 저금통의 승자를 예측해요!</p>
+          </div>
+          <div class="cover-feature-item">
+            <strong>2. 📊 일차함수 그래프 비교</strong>
+            <p>직선 그래프로 역전의 비밀(기울기와 y절편)을 발견해요!</p>
+          </div>
+          <div class="cover-feature-item">
+            <strong>3. 🧪 실시간 드래그 실험</strong>
+            <p>슬라이더를 손가락으로 드래그하며 직선의 변화를 직접 봐요!</p>
+          </div>
+        </div>
+
+        <!-- 문제 풀러 가기 버튼 -->
+        <button class="btn-start-game" onclick="switchStep(1)">
+          <span>🚀 문제 풀러 가기</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- ========================================================
+         [스텝 1 화면] 1단계: 나와 친구의 저금통 대결 & 투표
+    ======================================================== -->
+    <main class="step-view" id="viewStep1">
+      
+      <div class="view-title-bar">
+        <h2>⚔️ 1단계. 나와 친구의 저금통 비교</h2>
+        <span class="view-subtitle">시작할 때 있던 돈과 매일 모으는 돈이 서로 달라요!</span>
+      </div>
+
+      <!-- 대결 정보 카드 -->
+      <div class="battle-grid-compact">
+        
+        <!-- 나의 저금통 -->
+        <div class="piggy-card-compact mine">
+          <span class="piggy-header-tag">💖 나의 저금통</span>
+          <div class="piggy-avatar-small">
+            <svg viewBox="0 0 160 140">
+              <ellipse cx="80" cy="128" rx="55" ry="10" fill="#FCE7F3"/>
+              <path d="M 42 38 Q 28 15 48 20 Z" fill="#F472B6"/>
+              <path d="M 118 38 Q 132 15 112 20 Z" fill="#F472B6"/>
+              <ellipse cx="80" cy="75" rx="60" ry="50" fill="#F472B6"/>
+              <ellipse cx="80" cy="75" rx="55" ry="46" fill="#F9A8D4"/>
+              <rect x="68" y="27" width="24" height="6" rx="3" fill="#9D174D"/>
+              <rect x="45" y="110" width="16" height="15" rx="6" fill="#EC4899"/>
+              <rect x="99" y="110" width="16" height="15" rx="6" fill="#EC4899"/>
+              <ellipse cx="80" cy="84" rx="20" ry="14" fill="#F472B6"/>
+              <circle cx="73" cy="84" r="3.5" fill="#9D174D"/>
+              <circle cx="87" cy="84" r="3.5" fill="#9D174D"/>
+              <circle cx="56" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="54.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <circle cx="104" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="102.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <ellipse cx="44" cy="76" rx="6" ry="4" fill="#FB7185" opacity="0.6"/>
+              <ellipse cx="116" cy="76" rx="6" ry="4" fill="#FB7185" opacity="0.6"/>
+            </svg>
+          </div>
+          <div class="clue-list-compact">
+            <div class="clue-item-compact">
+              <span class="clue-lbl">처음 돈 (시작값)</span>
+              <span class="clue-num" id="s1MyInit">1,000원</span>
+            </div>
+            <div class="clue-item-compact">
+              <span class="clue-lbl">매일 저금하는 돈</span>
+              <span class="clue-num" id="s1MyDaily">1,500원 / 일</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vs-badge-compact">VS</div>
+
+        <!-- 친구의 저금통 -->
+        <div class="piggy-card-compact friend">
+          <span class="piggy-header-tag">💙 친구의 저금통</span>
+          <div class="piggy-avatar-small">
+            <svg viewBox="0 0 160 140">
+              <ellipse cx="80" cy="128" rx="55" ry="10" fill="#E0F2FE"/>
+              <path d="M 42 38 Q 28 15 48 20 Z" fill="#38BDF8"/>
+              <path d="M 118 38 Q 132 15 112 20 Z" fill="#38BDF8"/>
+              <ellipse cx="80" cy="75" rx="60" ry="50" fill="#38BDF8"/>
+              <ellipse cx="80" cy="75" rx="55" ry="46" fill="#7DD3FC"/>
+              <rect x="68" y="27" width="24" height="6" rx="3" fill="#0369A1"/>
+              <rect x="45" y="110" width="16" height="15" rx="6" fill="#0284C7"/>
+              <rect x="99" y="110" width="16" height="15" rx="6" fill="#0284C7"/>
+              <ellipse cx="80" cy="84" rx="20" ry="14" fill="#38BDF8"/>
+              <circle cx="73" cy="84" r="3.5" fill="#0369A1"/>
+              <circle cx="87" cy="84" r="3.5" fill="#0369A1"/>
+              <circle cx="56" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="54.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <circle cx="104" cy="62" r="4.5" fill="#1E293B"/>
+              <circle cx="102.5" cy="60.5" r="1.5" fill="#FFFFFF"/>
+              <ellipse cx="44" cy="76" rx="6" ry="4" fill="#38BDF8" opacity="0.6"/>
+              <ellipse cx="116" cy="76" rx="6" ry="4" fill="#38BDF8" opacity="0.6"/>
+            </svg>
+          </div>
+          <div class="clue-list-compact">
+            <div class="clue-item-compact">
+              <span class="clue-lbl">처음 돈 (시작값)</span>
+              <span class="clue-num" id="s1FriendInit">5,000원</span>
+            </div>
+            <div class="clue-item-compact">
+              <span class="clue-lbl">매일 저금하는 돈</span>
+              <span class="clue-num" id="s1FriendDaily">500원 / 일</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 투표 패널 -->
+      <div class="vote-panel-compact">
+        <div class="vote-title-compact">
+          🗳️ 과연 <span id="s1TargetDayText" style="color: #EA580C; text-decoration: underline;">5일 뒤</span>, 누가 더 많은 돈을 모으게 될까요?
+        </div>
+        <div class="vote-grid-compact">
+          <button class="btn-vote-compact mine" id="btnVoteMine" onclick="chooseVote('mine')">
+            <span style="font-size: 20px;">🙋‍♂️</span>
+            <span>내가 더 많을 것 같아!</span>
+          </button>
+          <button class="btn-vote-compact tie" id="btnVoteTie" onclick="chooseVote('tie')">
+            <span style="font-size: 20px;">🤝</span>
+            <span>둘이 똑같을 것 같아!</span>
+          </button>
+          <button class="btn-vote-compact friend" id="btnVoteFriend" onclick="chooseVote('friend')">
+            <span style="font-size: 20px;">🧑‍🤝‍🧑</span>
+            <span>친구가 더 많을 것 같아!</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 하단 네비게이션 -->
+      <footer class="step-action-footer">
+        <button class="btn-nav btn-nav-prev" onclick="switchStep(0)">
+          🏠 표지로 돌아가기
+        </button>
+        <button class="btn-nav btn-nav-next" id="btnToStep2" disabled onclick="switchStep(2)">
+          <span>직접 계산하러 가기</span> ➜
+        </button>
+      </footer>
+
+    </main>
+
+    <!-- ========================================================
+         [스텝 2 화면] 2단계: 직접 계산 입력 & 정답 검증
+    ======================================================== -->
+    <main class="step-view" id="viewStep2">
+      
+      <div class="view-title-bar">
+        <h2>✏️ 2단계. 직접 계산해서 예측 검증하기</h2>
+        <span class="view-subtitle" id="s2VoteSummaryBadge">나의 투표: 선택됨</span>
+      </div>
+
+      <!-- 상단 조건 요약 -->
+      <div class="summary-banner-bar">
+        <div>💖 <strong>나:</strong> 처음 <span id="s2MyInit">1,000원</span> + 하루 <span id="s2MyDaily">1,500원</span>씩</div>
+        <div style="color: #CBD5E1;">|</div>
+        <div>💙 <strong>친구:</strong> 처음 <span id="s2FriendInit">5,000원</span> + 하루 <span id="s2FriendDaily">500원</span>씩</div>
+      </div>
+
+      <div style="text-align: center; font-size: 15px; font-weight: 800; color: var(--dark);">
+        🎯 <span id="s2TargetDay">5일 뒤</span>, 각자 저금통에 모인 총 금액을 계산해보세요!
+      </div>
+
+      <!-- 입력창 2개 -->
+      <div class="calc-inputs-grid">
+        
+        <div class="calc-box-compact mine">
+          <div class="calc-label-row">
+            <span>💖 나의 총 금액 계산</span>
+            <span id="s2MyFormulaHint" style="font-size: 11px; opacity: 0.8;"></span>
+          </div>
+          <div class="input-wrapper-rel">
+            <input type="text" id="inputMyMoney" class="calc-input-tablet" placeholder="0" inputmode="numeric" oninput="formatInputNumber(this)" onkeydown="if(event.key==='Enter') verifyAnswers()">
+            <span class="input-unit-tag">원</span>
+          </div>
+        </div>
+
+        <div class="calc-box-compact friend">
+          <div class="calc-label-row">
+            <span>💙 친구의 총 금액 계산</span>
+            <span id="s2FriendFormulaHint" style="font-size: 11px; opacity: 0.8;"></span>
+          </div>
+          <div class="input-wrapper-rel">
+            <input type="text" id="inputFriendMoney" class="calc-input-tablet" placeholder="0" inputmode="numeric" oninput="formatInputNumber(this)" onkeydown="if(event.key==='Enter') verifyAnswers()">
+            <span class="input-unit-tag">원</span>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="btn-verify-tablet" onclick="verifyAnswers()">
+        정답 확인하기 ✨
+      </button>
+
+      <!-- 판정 결과 카드 -->
+      <div class="battle-result-card" id="battleResultCard">
+        <div class="result-head-row">
+          <span id="resIcon">🎉</span>
+          <span id="resTitle">결과 발표!</span>
+        </div>
+        <div class="result-detail-text" id="resDetailText"></div>
+      </div>
+
+      <!-- 하단 네비게이션 -->
+      <footer class="step-action-footer">
+        <button class="btn-nav btn-nav-prev" onclick="switchStep(1)">
+          ⬅️ 이전: 투표 화면
+        </button>
+        <button class="btn-nav btn-nav-next" id="btnToStep3" disabled onclick="switchStep(3)">
+          <span>그래프 비교하러 가기</span> ➜
+        </button>
+      </footer>
+
+    </main>
+
+    <!-- ========================================================
+         [스텝 3 화면] 3단계: 두 저금통의 그래프와 수식 비교
+    ======================================================== -->
+    <main class="step-view" id="viewStep3">
+      
+      <div class="view-title-bar">
+        <h2>📊 3단계. 그래프로 한눈에 보는 역전의 비밀!</h2>
+        <span class="view-subtitle">날짜가 지나면서 금액이 어떻게 변하는지 직선으로 확인해요!</span>
+      </div>
+
+      <!-- 수식 카드 2개 -->
+      <div class="formulas-compact-row">
+        <div class="formula-pill-box mine">
+          <div class="formula-eq-large" id="s3MyFormulaText">y = 1500x + 1000</div>
+          <div class="formula-sub-note">
+            • <strong>기울기(1,500)</strong>: 하루에 늘어나는 돈 (가파르게 상승!)<br>
+            • <strong>y절편(1,000)</strong>: 처음에 있던 돈 (시작 높이)
+          </div>
+        </div>
+
+        <div class="formula-pill-box friend">
+          <div class="formula-eq-large" id="s3FriendFormulaText">y = 500x + 5000</div>
+          <div class="formula-sub-note">
+            • <strong>기울기(500)</strong>: 하루에 늘어나는 돈 (완만하게 상승)<br>
+            • <strong>y절편(5,000)</strong>: 처음에 있던 돈 (더 높은 곳에서 시작)
+          </div>
+        </div>
+      </div>
+
+      <!-- 캔버스 그래프 -->
+      <div class="canvas-wrapper-tablet">
+        <canvas id="comparisonCanvas"></canvas>
+      </div>
+
+      <div class="graph-note-compact" id="s3AnalysisNote"></div>
+
+      <!-- 하단 네비게이션 -->
+      <footer class="step-action-footer">
+        <button class="btn-nav btn-nav-prev" onclick="switchStep(2)">
+          ⬅️ 이전: 계산 화면
+        </button>
+        <button class="btn-nav btn-nav-next" onclick="switchStep(4)">
+          <span>심화 실험실 가기</span> ➜
+        </button>
+      </footer>
+
+    </main>
+
+    <!-- ========================================================
+         [스텝 4 화면] 4단계: 심화 내용 (명확한 함수 맞추기 안내 & 실시간 드래그 실험)
+    ======================================================== -->
+    <main class="step-view" id="viewStep4">
+      
+      <div class="view-title-bar">
+        <h2>🧪 4단계. 내 함수 만들기 & 실시간 드래그 실험실</h2>
+        <span class="view-subtitle">기울기와 y절편을 드래그해보며 직접 변화를 관찰해보세요!</span>
+      </div>
+
+      <!-- 파트 1: 내 저금통 함수 맞추기 퀴즈 (발문과 빈칸 안내를 매우 구체적으로 명시!) -->
+      <div class="maker-instruction-card">
+        <div class="maker-prompt-head">
+          <span>🧩</span> 나의 저금통 조건을 보고, 일차함수 식(y = ax + b)의 빈칸을 완성하세요!
+        </div>
+
+        <!-- 단서 리마인드 배너 -->
+        <div class="maker-clue-badge-row">
+          <span>📌 <strong>나의 조건 확인:</strong></span>
+          <span>• 매일 저금하는 돈: <strong style="color: var(--my-color);" id="s4ClueA">1,500원 / 일</strong></span>
+          <span>• 처음에 있던 돈: <strong style="color: #D97706;" id="s4ClueB">1,000원</strong></span>
+        </div>
+
+        <!-- 명확한 라벨이 달린 수식 입력 폼 -->
+        <div class="maker-eq-container">
+          <span>y = </span>
+          
+          <div class="slot-col-box">
+            <input type="text" id="slotA" class="slot-input-exact" placeholder="숫자 입력" inputmode="numeric">
+            <span class="slot-label-exact">매일 저금하는 돈 (기울기 a)</span>
+          </div>
+
+          <span> x  + </span>
+
+          <div class="slot-col-box">
+            <input type="text" id="slotB" class="slot-input-exact" placeholder="숫자 입력" inputmode="numeric">
+            <span class="slot-label-exact">처음에 있던 돈 (y절편 b)</span>
+          </div>
+
+          <button class="btn-check-slot" onclick="checkBuiltFormula()">식 맞추기 확인</button>
+        </div>
+
+        <div class="maker-feedback-box" id="makerFeedback"></div>
+      </div>
+
+      <!-- 파트 2: 슬라이더 2개 & 실시간 드래그 캔버스 -->
+      <div class="sliders-grid-compact">
+        
+        <!-- 기울기 슬라이더 -->
+        <div class="slider-card-compact slope">
+          <div class="slider-header-row">
+            <span>📐 기울기 a (매일 저금하는 돈)</span>
+            <span class="slider-badge-compact" id="sliderSlopeBadge">1,500원</span>
+          </div>
+          <input type="range" id="slopeRange" class="custom-range-touch" min="0" max="3000" step="100" value="1500" oninput="onSliderDrag()">
+          <div class="slider-tip-text">
+            👉 <strong>기울기가 커질수록</strong> 직선이 위로 가파르게 올라가요!
+          </div>
+        </div>
+
+        <!-- y절편 슬라이더 -->
+        <div class="slider-card-compact intercept">
+          <div class="slider-header-row">
+            <span>📍 y절편 b (처음에 있던 돈)</span>
+            <span class="slider-badge-compact" id="sliderInterceptBadge">1,000원</span>
+          </div>
+          <input type="range" id="interceptRange" class="custom-range-touch" min="0" max="8000" step="500" value="1000" oninput="onSliderDrag()">
+          <div class="slider-tip-text">
+            👉 <strong>y절편이 커질수록</strong> 그래프가 위로 평행이동해요!
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 실시간 드래그 반응형 캔버스 -->
+      <div class="canvas-wrapper-tablet" style="height: 250px;">
+        <canvas id="interactiveCanvas"></canvas>
+      </div>
+
+      <!-- 실시간 관찰 배너 -->
+      <div class="live-banner-compact" id="liveStatusBanner">
+        현재 내 함수: <strong>y = 1500x + 1000</strong>
+      </div>
+
+      <!-- 하단 네비게이션 -->
+      <footer class="step-action-footer">
+        <button class="btn-nav btn-nav-prev" onclick="switchStep(3)">
+          ⬅️ 이전: 그래프 비교
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-nav btn-nav-prev" style="background: #ECFDF5; color: #047857; border-color: #6EE7B7;" onclick="resetToNewGame()">
+            🔄 한 번 더 하기
+          </button>
+          <button class="btn-nav btn-nav-next" style="background: #475569;" onclick="openFinishModal()">
+            🏁 탐구 종료
+          </button>
+        </div>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- ========== 종료 모달 ========== -->
+  <div class="modal-overlay" id="finishModal">
+    <div class="modal-content-compact">
+      <div style="font-size: 44px; margin-bottom: 8px;">🎓</div>
+      <h3 style="font-size: 21px; font-weight: 900; color: var(--dark); margin-bottom: 6px;">
+        오늘의 일차함수 탐구 완료!
+      </h3>
+      <p style="font-size: 14px; color: var(--gray); line-height: 1.5;">
+        두 저금통을 비교하고 직접 드래그해보며 <strong>일차함수의 두 기둥</strong>을 완벽히 이해했어요!
+      </p>
+
+      <div class="summary-card-clean">
+        <strong>📌 오늘 배운 핵심 개념 한 줄 요약:</strong>
+        <ul>
+          <li><strong>일차함수</strong>: y = ax + b 꼴로 나타나는 규칙적인 관계</li>
+          <li><strong>기울기(a)</strong>: 매일 늘어나는 돈 (그래프가 얼마나 가파른가?)</li>
+          <li><strong>y절편(b)</strong>: 처음에 있던 돈 (x = 0일 때 그래프의 시작 높이)</li>
+          <li><strong>평행이동</strong>: 기울기가 같고 y절편만 바뀌면 나란히 평행하게 움직여요!</li>
+        </ul>
+      </div>
+
+      <button class="btn-finish-action" onclick="closeFinishModalAndReset()">
+        🚀 처음부터 다시 시작하기
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== 자바스크립트 엔진 (100% 완전 오프라인, No CDN) ========== -->
+  <script>
+    /* ==========================================
+       1. 전역 상태 데이터
+    ========================================== */
+    const State = {
+      currentStep: 0,     // 0: 표지, 1: 대결&투표, 2: 계산, 3: 그래프, 4: 심화
+      my: { b: 1000, a: 1500 },
+      friend: { b: 5000, a: 500 },
+      targetDay: 5,
+      userVote: null,     // 'mine', 'tie', 'friend'
+      answeredCorrect: false,
+      soundEnabled: true,
+      
+      get myTotal() {
+        return this.my.a * this.targetDay + this.my.b;
+      },
+      get friendTotal() {
+        return this.friend.a * this.targetDay + this.friend.b;
+      },
+      get winner() {
+        if (this.myTotal > this.friendTotal) return 'mine';
+        if (this.myTotal < this.friendTotal) return 'friend';
+        return 'tie';
+      },
+
+      interactive: {
+        a: 1500,
+        b: 1000
+      }
+    };
+
+    /* ==========================================
+       2. Web Audio API 신시사이저
+    ========================================== */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, type, duration, delay = 0, gainLevel = 0.15) {
+      if (!State.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        setTimeout(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(gainLevel, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        }, delay * 1000);
+      } catch (e) {}
+    }
+
+    function playSoundEffect(name) {
+      if (!State.soundEnabled) return;
+      if (name === 'click') {
+        playTone(600, 'sine', 0.05, 0, 0.06);
+      } else if (name === 'vote') {
+        playTone(523.25, 'triangle', 0.12, 0, 0.15); // C5
+        playTone(659.25, 'triangle', 0.15, 0.07, 0.15); // E5
+      } else if (name === 'correct') {
+        playTone(523.25, 'triangle', 0.14, 0, 0.2);
+        playTone(659.25, 'triangle', 0.14, 0.09, 0.2);
+        playTone(783.99, 'triangle', 0.18, 0.18, 0.2);
+        playTone(1046.50, 'triangle', 0.35, 0.28, 0.25);
+      } else if (name === 'wrong') {
+        playTone(320, 'sawtooth', 0.18, 0, 0.12);
+        playTone(250, 'sawtooth', 0.28, 0.12, 0.12);
+      } else if (name === 'step') {
+        playTone(440, 'sine', 0.08, 0, 0.08);
+        playTone(880, 'sine', 0.12, 0.06, 0.1);
+      }
+    }
+
+    function toggleSound() {
+      State.soundEnabled = !State.soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      btn.textContent = State.soundEnabled ? '🔔' : '🔕';
+      btn.title = State.soundEnabled ? '효과음 켜짐' : '효과음 꺼짐';
+      if (State.soundEnabled) playSoundEffect('click');
+    }
+
+    /* ==========================================
+       3. 화면 스텝 전환 (표지 + 1, 2, 3, 4단계)
+    ========================================== */
+    function switchStep(targetStep) {
+      if (targetStep === 2 && !State.userVote) {
+        alert("먼저 누가 더 많은 돈을 모을지 투표를 선택해주세요!");
+        return;
+      }
+      if (targetStep >= 3 && !State.answeredCorrect) {
+        alert("먼저 계산을 완료하고 정답을 확인해주세요!");
+        return;
+      }
+
+      playSoundEffect('step');
+      State.currentStep = targetStep;
+
+      // 1. 모든 뷰 숨기고 목표 뷰만 표시
+      for (let i = 0; i <= 4; i++) {
+        const view = document.getElementById(`viewStep${i}`);
+        const tab = document.getElementById(`tabStep${i}`);
+        if (view) view.classList.remove('current');
+        if (tab) tab.classList.remove('active');
+      }
+
+      const activeView = document.getElementById(`viewStep${targetStep}`);
+      const activeTab = document.getElementById(`tabStep${targetStep}`);
+      if (activeView) activeView.classList.add('current');
+      if (activeTab) activeTab.classList.add('active');
+
+      // 2. 캔버스 렌더링
+      if (targetStep === 3) {
+        setTimeout(drawComparisonGraph, 30);
+      } else if (targetStep === 4) {
+        setTimeout(drawInteractiveGraph, 30);
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ==========================================
+       4. 문제 데이터 무작위 생성 & 초기화
+    ========================================== */
+    function getRandomFrom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generateNewScenario() {
+      const scenarios = [
+        { myA: 1500, myB: 1000, friendA: 500, friendB: 5000, day: 5 },  // 나 8500 vs 친구 7500 (나 역전승)
+        { myA: 2000, myB: 0,    friendA: 1000, friendB: 4000, day: 4 }, // 나 8000 vs 친구 8000 (동점)
+        { myA: 1200, myB: 2000, friendA: 600, friendB: 6000, day: 5 },  // 나 8000 vs 친구 9000 (친구 승)
+        { myA: 1800, myB: 500,  friendA: 800, friendB: 4500, day: 5 },  // 나 9500 vs 친구 8500 (나 역전승)
+        { myA: 1000, myB: 3000, friendA: 500, friendB: 5000, day: 4 }   // 나 7000 vs 친구 7000 (동점)
+      ];
+
+      const sc = getRandomFrom(scenarios);
+      State.my.a = sc.myA;
+      State.my.b = sc.myB;
+      State.friend.a = sc.friendA;
+      State.friend.b = sc.friendB;
+      State.targetDay = sc.day;
+
+      State.userVote = null;
+      State.answeredCorrect = false;
+
+      State.interactive.a = sc.myA;
+      State.interactive.b = sc.myB;
+    }
+
+    function initGame(startAtCover = true) {
+      generateNewScenario();
+
+      // [스텝 1 UI 갱신]
+      document.getElementById('s1MyInit').textContent = `${State.my.b.toLocaleString()}원`;
+      document.getElementById('s1MyDaily').textContent = `${State.my.a.toLocaleString()}원 / 일`;
+      document.getElementById('s1FriendInit').textContent = `${State.friend.b.toLocaleString()}원`;
+      document.getElementById('s1FriendDaily').textContent = `${State.friend.a.toLocaleString()}원 / 일`;
+      document.getElementById('s1TargetDayText').textContent = `${State.targetDay}일 뒤`;
+
+      document.querySelectorAll('.btn-vote-compact').forEach(b => b.classList.remove('selected'));
+      document.getElementById('btnToStep2').disabled = true;
+
+      // [스텝 2 UI 갱신]
+      document.getElementById('s2MyInit').textContent = `${State.my.b.toLocaleString()}원`;
+      document.getElementById('s2MyDaily').textContent = `${State.my.a.toLocaleString()}원`;
+      document.getElementById('s2FriendInit').textContent = `${State.friend.b.toLocaleString()}원`;
+      document.getElementById('s2FriendDaily').textContent = `${State.friend.a.toLocaleString()}원`;
+      document.getElementById('s2TargetDay').textContent = `${State.targetDay}일 뒤`;
+      document.getElementById('s2MyFormulaHint').textContent = `(처음 ${State.my.b.toLocaleString()}원 + 하루 ${State.my.a.toLocaleString()}원)`;
+      document.getElementById('s2FriendFormulaHint').textContent = `(처음 ${State.friend.b.toLocaleString()}원 + 하루 ${State.friend.a.toLocaleString()}원)`;
+      
+      document.getElementById('inputMyMoney').value = '';
+      document.getElementById('inputFriendMoney').value = '';
+      document.getElementById('battleResultCard').style.display = 'none';
+      document.getElementById('btnToStep3').disabled = true;
+
+      // [스텝 3 UI 갱신]
+      document.getElementById('s3MyFormulaText').textContent = `y = ${State.my.a.toLocaleString()}x + ${State.my.b.toLocaleString()}`;
+      document.getElementById('s3FriendFormulaText').textContent = `y = ${State.friend.a.toLocaleString()}x + ${State.friend.b.toLocaleString()}`;
+
+      // [스텝 4 UI 갱신 (단서 리마인드 배너 갱신)]
+      document.getElementById('s4ClueA').textContent = `${State.my.a.toLocaleString()}원 / 일`;
+      document.getElementById('s4ClueB').textContent = `${State.my.b.toLocaleString()}원`;
+      document.getElementById('slotA').value = '';
+      document.getElementById('slotB').value = '';
+      document.getElementById('makerFeedback').style.display = 'none';
+      document.getElementById('slopeRange').value = State.interactive.a;
+      document.getElementById('interceptRange').value = State.interactive.b;
+      document.getElementById('sliderSlopeBadge').textContent = `${State.interactive.a.toLocaleString()}원`;
+      document.getElementById('sliderInterceptBadge').textContent = `${State.interactive.b.toLocaleString()}원`;
+      onSliderDrag();
+
+      // 상단 탭 상태 리셋
+      for (let i = 0; i <= 4; i++) {
+        const tab = document.getElementById(`tabStep${i}`);
+        if (tab) tab.classList.remove('active', 'completed');
+      }
+
+      // 표지 또는 1단계로 시작
+      switchStep(startAtCover ? 0 : 1);
+    }
+
+    /* ==========================================
+       5. 1단계: 투표 처리
+    ========================================== */
+    function chooseVote(choice) {
+      State.userVote = choice;
+      playSoundEffect('vote');
+
+      document.querySelectorAll('.btn-vote-compact').forEach(b => b.classList.remove('selected'));
+      if (choice === 'mine') document.getElementById('btnVoteMine').classList.add('selected');
+      if (choice === 'tie') document.getElementById('btnVoteTie').classList.add('selected');
+      if (choice === 'friend') document.getElementById('btnVoteFriend').classList.add('selected');
+
+      const choiceName = choice === 'mine' ? '🙋‍♂️ 내가 더 많을 것 같아!' : (choice === 'tie' ? '🤝 둘이 똑같을 것 같아!' : '🧑‍🤝‍🧑 친구가 더 많을 것 같아!');
+      document.getElementById('btnToStep2').disabled = false;
+      document.getElementById('tabStep1').classList.add('completed');
+      document.getElementById('s2VoteSummaryBadge').textContent = `나의 투표: ${choiceName}`;
+    }
+
+    /* ==========================================
+       6. 2단계: 직접 계산 및 정답 검증
+    ========================================== */
+    function formatInputNumber(el) {
+      let raw = el.value.replace(/[^0-9]/g, '');
+      if (raw) el.value = parseInt(raw, 10).toLocaleString();
+      else el.value = '';
+    }
+
+    function verifyAnswers() {
+      const myVal = parseInt(document.getElementById('inputMyMoney').value.replace(/[^0-9]/g, ''), 10);
+      const friendVal = parseInt(document.getElementById('inputFriendMoney').value.replace(/[^0-9]/g, ''), 10);
+
+      if (isNaN(myVal) || isNaN(friendVal)) {
+        alert("나와 친구의 금액을 모두 숫자로 입력해주세요!");
+        return;
+      }
+
+      const isMyOk = (myVal === State.myTotal);
+      const isFriendOk = (friendVal === State.friendTotal);
+
+      if (!isMyOk || !isFriendOk) {
+        playSoundEffect('wrong');
+        alert(`앗, 계산이 맞지 않는 곳이 있어요!\n• 하루에 모으는 돈 × ${State.targetDay}일에 처음 있던 돈을 더해보세요.`);
+        return;
+      }
+
+      State.answeredCorrect = true;
+      playSoundEffect('correct');
+      fireConfetti();
+
+      document.getElementById('tabStep2').classList.add('completed');
+      document.getElementById('btnToStep3').disabled = false;
+
+      const card = document.getElementById('battleResultCard');
+      const icon = document.getElementById('resIcon');
+      const title = document.getElementById('resTitle');
+      const detail = document.getElementById('resDetailText');
+
+      let winnerMsg = "";
+      let winnerClass = "";
+      if (State.winner === 'mine') {
+        winnerMsg = "💖 나의 승리!";
+        winnerClass = "win-mine";
+      } else if (State.winner === 'friend') {
+        winnerMsg = "💙 친구의 승리!";
+        winnerClass = "win-friend";
+      } else {
+        winnerMsg = "🤝 둘의 금액이 똑같아요!";
+        winnerClass = "win-tie";
+      }
+
+      card.className = `battle-result-card ${winnerClass}`;
+      card.style.display = 'block';
+      icon.textContent = State.winner === 'mine' ? '🏆' : (State.winner === 'friend' ? '👏' : '⚖️');
+      title.textContent = `${State.targetDay}일 뒤 결과: ${winnerMsg}`;
+
+      const isVoteHit = (State.userVote === State.winner);
+      const voteFeedback = isVoteHit 
+        ? "🎯 <strong>대단해요! 처음에 투표했던 나의 예측이 정확히 맞았어요!</strong>" 
+        : "💡 <strong>처음 예측과는 다른 흥미진진한 결과가 나왔네요!</strong>";
+
+      detail.innerHTML = `
+        <p style="margin-bottom: 6px;">${voteFeedback}</p>
+        <p>
+          • <strong>나:</strong> ${State.my.b.toLocaleString()}원 + (${State.my.a.toLocaleString()}원 × ${State.targetDay}일) = <strong style="color: var(--my-color);">${State.myTotal.toLocaleString()}원</strong><br>
+          • <strong>친구:</strong> ${State.friend.b.toLocaleString()}원 + (${State.friend.a.toLocaleString()}원 × ${State.targetDay}일) = <strong style="color: var(--friend-color);">${State.friendTotal.toLocaleString()}원</strong>
+        </p>
+        <p style="margin-top: 6px; font-weight: 700;">
+          👉 아래 <strong>[그래프 비교하러 가기 ➜]</strong> 버튼을 눌러 이 역전의 비밀을 확인해보세요!
+        </p>
+      `;
+
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    /* ==========================================
+       7. 3단계: 2개 직선 비교 Canvas 렌더러
+    ========================================== */
+    function drawComparisonGraph() {
+      const canvas = document.getElementById('comparisonCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+
+      const pad = { top: 30, right: 30, bottom: 40, left: 60 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+
+      const maxX = Math.max(State.targetDay + 2, 7);
+      const maxVal = Math.max(State.my.a * maxX + State.my.b, State.friend.a * maxX + State.friend.b);
+      const maxY = Math.ceil(maxVal * 1.15 / 1000) * 1000;
+
+      function toX(v) { return pad.left + (v / maxX) * plotW; }
+      function toY(v) { return pad.top + plotH - (v / maxY) * plotH; }
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 모눈 격자
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = '11px Pretendard, sans-serif';
+      ctx.textAlign = 'center';
+      for (let x = 0; x <= maxX; x++) {
+        const cx = toX(x);
+        ctx.beginPath();
+        ctx.moveTo(cx, pad.top);
+        ctx.lineTo(cx, pad.top + plotH);
+        ctx.stroke();
+        ctx.fillText(x, cx, pad.top + plotH + 8);
+      }
+
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      const yStep = Math.max(1000, Math.floor(maxY / 4 / 500) * 500);
+      for (let y = 0; y <= maxY; y += yStep) {
+        const cy = toY(y);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, cy);
+        ctx.lineTo(pad.left + plotW, cy);
+        ctx.stroke();
+        ctx.fillText(y.toLocaleString(), pad.left - 6, cy);
+      }
+      ctx.setLineDash([]);
+
+      // 축
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left + plotW + 10, pad.top + plotH);
+      ctx.moveTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left, pad.top - 10);
+      ctx.stroke();
+
+      ctx.fillStyle = '#1E293B';
+      ctx.font = 'bold 11px Pretendard, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('날짜 (일)', pad.left + plotW - 30, pad.top + plotH + 24);
+      ctx.textAlign = 'center';
+      ctx.fillText('금액 (원)', pad.left, pad.top - 18);
+
+      // 1. 친구의 직선 (파랑)
+      ctx.strokeStyle = '#0284C7';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(State.friend.b));
+      ctx.lineTo(toX(maxX), toY(State.friend.a * maxX + State.friend.b));
+      ctx.stroke();
+
+      // 2. 나의 직선 (핑크)
+      ctx.strokeStyle = '#EC4899';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(State.my.b));
+      ctx.lineTo(toX(maxX), toY(State.my.a * maxX + State.my.b));
+      ctx.stroke();
+
+      // 목표 날짜 수직선
+      const targetCx = toX(State.targetDay);
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(targetCx, pad.top);
+      ctx.lineTo(targetCx, pad.top + plotH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 점 찍기
+      const myY = State.myTotal;
+      const frY = State.friendTotal;
+
+      ctx.fillStyle = '#EC4899';
+      ctx.beginPath();
+      ctx.arc(targetCx, toY(myY), 6.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#0284C7';
+      ctx.beginPath();
+      ctx.arc(targetCx, toY(frY), 6.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = 'bold 11px Pretendard, sans-serif';
+      ctx.fillStyle = '#EC4899';
+      ctx.textAlign = 'left';
+      ctx.fillText(`나: ${myY.toLocaleString()}원`, targetCx + 8, toY(myY) - 6);
+
+      ctx.fillStyle = '#0284C7';
+      ctx.fillText(`친구: ${frY.toLocaleString()}원`, targetCx + 8, toY(frY) + 12);
+
+      let crossMsg = "";
+      if (State.my.a !== State.friend.a) {
+        const cross = (State.friend.b - State.my.b) / (State.my.a - State.friend.a);
+        if (cross > 0) {
+          crossMsg = ` 두 직선이 만나는 교점은 약 <strong>${cross.toFixed(1)}일째</strong>입니다. 이 날을 기점으로 기울기가 더 가파른(매일 더 많이 모으는) 쪽이 역전하게 돼요!`;
+        }
+      }
+
+      document.getElementById('s3AnalysisNote').innerHTML = `
+        💡 <strong>선생님의 그래프 정리:</strong> 
+        0일째 세로축(y절편)은 친구(${State.friend.b.toLocaleString()}원)가 나(${State.my.b.toLocaleString()}원)보다 높았지만, 
+        나의 직선(기울기 ${State.my.a.toLocaleString()})이 친구의 직선(기울기 ${State.friend.a.toLocaleString()})보다 훨씬 가파르게 올라갑니다!
+        ${crossMsg}
+      `;
+    }
+
+    /* ==========================================
+       8. 4단계: 심화 함수 맞추기 퀴즈 & 실시간 드래그 Canvas
+    ========================================== */
+    function checkBuiltFormula() {
+      const inA = parseInt(document.getElementById('slotA').value.replace(/[^0-9]/g, ''), 10);
+      const inB = parseInt(document.getElementById('slotB').value.replace(/[^0-9]/g, ''), 10);
+      const fb = document.getElementById('makerFeedback');
+
+      if (isNaN(inA) || isNaN(inB)) {
+        alert("두 빈칸에 모두 숫자를 입력해주세요!");
+        return;
+      }
+
+      // 두 숫자를 반대로 넣었는지 체크
+      if (inA === State.my.b && inB === State.my.a) {
+        playSoundEffect('wrong');
+        fb.style.display = 'block';
+        fb.style.background = '#FEE2E2';
+        fb.style.color = '#B91C1C';
+        fb.innerHTML = `⚠️ <strong>두 숫자의 자리가 바뀌었어요!</strong><br>• x 앞자리에는 <strong>'매일 저금하는 돈(${State.my.a.toLocaleString()}원)'</strong>을,<br>• 뒤쪽 자리에는 <strong>'처음에 있던 돈(${State.my.b.toLocaleString()}원)'</strong>을 넣어주세요!`;
+        return;
+      }
+
+      if (inA === State.my.a && inB === State.my.b) {
+        playSoundEffect('correct');
+        fb.style.display = 'block';
+        fb.style.background = '#ECFDF5';
+        fb.style.color = '#065F46';
+        fb.innerHTML = `🎉 <strong>완벽해요! 정확하게 맞추셨어요!</strong><br>매일 늘어나는 돈(기울기 a) = <strong>${State.my.a.toLocaleString()}</strong>, 처음 돈(y절편 b) = <strong>${State.my.b.toLocaleString()}</strong><br>따라서 나의 저금통 함수는 <strong>y = ${State.my.a}x + ${State.my.b}</strong> 입니다!`;
+      } else {
+        playSoundEffect('wrong');
+        fb.style.display = 'block';
+        fb.style.background = '#FEF2F2';
+        fb.style.color = '#991B1B';
+        fb.innerHTML = `앗, 다시 확인해보세요!<br>• x 앞 빈칸: <strong>나의 매일 저금액(${State.my.a.toLocaleString()})</strong><br>• 뒤 빈칸: <strong>나의 처음 돈(${State.my.b.toLocaleString()})</strong>`;
+      }
+    }
+
+    function onSliderDrag() {
+      const slope = parseInt(document.getElementById('slopeRange').value, 10);
+      const intercept = parseInt(document.getElementById('interceptRange').value, 10);
+
+      State.interactive.a = slope;
+      State.interactive.b = intercept;
+
+      document.getElementById('sliderSlopeBadge').textContent = `${slope.toLocaleString()}원`;
+      document.getElementById('sliderInterceptBadge').textContent = `${intercept.toLocaleString()}원`;
+
+      const bSign = intercept >= 0 ? `+ ${intercept.toLocaleString()}` : `- ${Math.abs(intercept).toLocaleString()}`;
+      const eqText = intercept === 0 ? `y = ${slope.toLocaleString()}x` : `y = ${slope.toLocaleString()}x ${bSign}`;
+      
+      let note = "";
+      if (slope > State.friend.a) {
+        const winDay = (State.friend.b - intercept) / (slope - State.friend.a);
+        if (winDay <= 0) note = "🚀 시작부터 친구보다 많아요!";
+        else note = `⚡ 약 <strong>${winDay.toFixed(1)}일째</strong>에 친구를 역전해요!`;
+      } else if (slope === State.friend.a) {
+        note = "🤝 친구와 기울기가 같아서 두 직선이 평행해요!";
+      } else {
+        note = "🐢 친구보다 모으는 속도가 느려요!";
+      }
+
+      document.getElementById('liveStatusBanner').innerHTML = `현재 내 함수: <strong style="color: #4F46E5;">${eqText}</strong> | ${note}`;
+
+      drawInteractiveGraph();
+    }
+
+    function drawInteractiveGraph() {
+      const canvas = document.getElementById('interactiveCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+
+      const pad = { top: 25, right: 30, bottom: 35, left: 60 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+
+      const maxX = 8;
+      const maxY = 18000;
+
+      function toX(v) { return pad.left + (v / maxX) * plotW; }
+      function toY(v) { return pad.top + plotH - (v / maxY) * plotH; }
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 격자
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = '11px Pretendard, sans-serif';
+      ctx.textAlign = 'center';
+      for (let x = 0; x <= maxX; x++) {
+        const cx = toX(x);
+        ctx.beginPath();
+        ctx.moveTo(cx, pad.top);
+        ctx.lineTo(cx, pad.top + plotH);
+        ctx.stroke();
+        ctx.fillText(x, cx, pad.top + plotH + 8);
+      }
+
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let y = 0; y <= maxY; y += 4000) {
+        const cy = toY(y);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, cy);
+        ctx.lineTo(pad.left + plotW, cy);
+        ctx.stroke();
+        ctx.fillText(y.toLocaleString(), pad.left - 6, cy);
+      }
+      ctx.setLineDash([]);
+
+      // 축
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left + plotW + 10, pad.top + plotH);
+      ctx.moveTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left, pad.top - 10);
+      ctx.stroke();
+
+      ctx.fillStyle = '#1E293B';
+      ctx.font = 'bold 11px Pretendard, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('날짜 (일)', pad.left + plotW - 30, pad.top + plotH + 22);
+      ctx.textAlign = 'center';
+      ctx.fillText('금액 (원)', pad.left, pad.top - 14);
+
+      // 친구 기준선
+      ctx.strokeStyle = 'rgba(2, 132, 199, 0.4)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(State.friend.b));
+      ctx.lineTo(toX(maxX), toY(State.friend.a * maxX + State.friend.b));
+      ctx.stroke();
+
+      ctx.fillStyle = '#0284C7';
+      ctx.font = '11px Pretendard, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('친구(기준)', toX(maxX) - 45, toY(State.friend.a * maxX + State.friend.b) - 6);
+
+      // 내 실시간 직선
+      const a = State.interactive.a;
+      const b = State.interactive.b;
+
+      ctx.strokeStyle = '#EC4899';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(b));
+      ctx.lineTo(toX(maxX), toY(a * maxX + b));
+      ctx.stroke();
+
+      // y절편 점
+      ctx.fillStyle = '#F59E0B';
+      ctx.beginPath();
+      ctx.arc(toX(0), toY(b), 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#D97706';
+      ctx.font = 'bold 11px Pretendard, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`y절편 (${b.toLocaleString()}원)`, toX(0) + 8, toY(b) - 6);
+
+      // 기울기 계단 (x=2 ~ x=3)
+      if (a > 0) {
+        const x1 = toX(2);
+        const y1 = toY(a * 2 + b);
+        const x2 = toX(3);
+        const y2 = toY(a * 3 + b);
+
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#10B981';
+        ctx.font = 'bold 10px Pretendard, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('+1일', (x1 + x2) / 2, y1 + 12);
+        ctx.textAlign = 'left';
+        ctx.fillText(`+${a.toLocaleString()}원`, x2 + 4, (y1 + y2) / 2);
+      }
+    }
+
+    /* ==========================================
+       9. 컨페티(폭죽) 애니메이션
+    ========================================== */
+    function fireConfetti() {
+      const c = document.getElementById('confettiCanvas');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#EC4899', '#38BDF8', '#F59E0B', '#10B981', '#6366F1'];
+
+      for (let i = 0; i < 70; i++) {
+        particles.push({
+          x: c.width / 2 + (Math.random() - 0.5) * 160,
+          y: c.height / 2 + (Math.random() - 0.5) * 80,
+          vx: (Math.random() - 0.5) * 12,
+          vy: -Math.random() * 11 - 3,
+          size: Math.random() * 7 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8,
+          alpha: 1
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        let alive = false;
+        for (const p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.32;
+          p.vx *= 0.98;
+          p.rotation += p.rotSpeed;
+          p.alpha -= 0.014;
+
+          if (p.alpha > 0) {
+            alive = true;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.3);
+            ctx.restore();
+          }
+        }
+        if (alive) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, c.width, c.height);
+      }
+      animate();
+    }
+
+    /* ==========================================
+       10. 리셋 & 종료 모달
+    ========================================== */
+    function resetToNewGame() {
+      playSoundEffect('click');
+      initGame(false); // 한 번 더 하기는 바로 1단계 대결로 진입
+    }
+
+    function openFinishModal() {
+      playSoundEffect('click');
+      document.getElementById('finishModal').classList.add('open');
+    }
+
+    function closeFinishModalAndReset() {
+      playSoundEffect('click');
+      document.getElementById('finishModal').classList.remove('open');
+      initGame(true); // 표지로 리셋
+    }
+
+    window.addEventListener('resize', () => {
+      if (State.currentStep === 3) drawComparisonGraph();
+      if (State.currentStep === 4) drawInteractiveGraph();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGame(true); // 최초 로드 시 표지 화면으로 시작
+    });
+  </script>
+</body>
+</html>
